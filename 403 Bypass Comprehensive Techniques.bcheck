@@ -1,0 +1,143 @@
+metadata:
+    language: v2-beta
+    name: "403 Bypass Comprehensive Techniques"
+    description: "Comprehensive 403 bypass testing using header manipulation, URL obfuscation, method overrides, and custom headers."
+    author: "CyberTechAjju"
+    tags: "403 bypass", "header bypass", "url manipulation", "method override", "access control bypass"
+
+define:
+    detailMsg = "A 403 bypass technique successfully elicited a 200 OK response from a request that was previously receiving a 403 Forbidden response. Further manual investigation is required."
+    remediationMsg = "Manually investigate the issue. Implement proper access control validation that doesn't rely on client-controlled headers, URL patterns, or HTTP methods."
+
+run for each:
+    ipHeaderArray =
+        "X-Forwarded-For",
+        "X-Real-IP",
+        "X-Client-IP",
+        "X-Remote-IP",
+        "X-Originating-IP",
+        "CF-Connecting-IP",
+        "True-Client-IP"
+
+    urlHeaderArray =
+        "X-Original-URL",
+        "X-Rewrite-URL",
+        "X-Override-Url"
+
+    hostHeaderArray =
+        "X-Host",
+        "X-Forwarded-Host"
+
+    customHeaderArray =
+        "Internal-Access",
+        "Admin-Access",
+        "X-Admin"
+
+    methodOverrideArray =
+        "X-HTTP-Method-Override",
+        "X-HTTP-Method",
+        "X-Method-Override"
+
+    ipPayloadArray =
+        "127.0.0.1",
+        "localhost",
+        "::1",
+        "0.0.0.0"
+
+    userAgentArray =
+        "AdminBot",
+        "InternalTool",
+        "SystemAdmin"
+
+    httpMethodArray =
+        "POST",
+        "PUT",
+        "OPTIONS",
+        "HEAD"
+
+given request then
+    if {base.response.status_code} matches "403" then
+        
+        send request called ipHeaderTest:
+            method: {base.request.method}
+            path: {base.request.url.path}
+            replacing headers:
+                {ipHeaderArray}: {ipPayloadArray}
+
+        if {ipHeaderTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+        send request called urlHeaderTest:
+            method: {base.request.method}
+            path: {base.request.url.path}
+            replacing headers:
+                {urlHeaderArray}: {base.request.url.path}
+
+        if {urlHeaderTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+        send request called hostHeaderTest:
+            method: {base.request.method}
+            path: {base.request.url.path}
+            replacing headers:
+                {hostHeaderArray}: {ipPayloadArray}
+
+        if {hostHeaderTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+        send request called customHeaderTest:
+            method: {base.request.method}
+            path: {base.request.url.path}
+            replacing headers:
+                {customHeaderArray}: {ipPayloadArray}
+
+        if {customHeaderTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+        send request called methodOverrideTest:
+            method: {base.request.method}
+            path: {base.request.url.path}
+            replacing headers:
+                {methodOverrideArray}: {httpMethodArray}
+
+        if {methodOverrideTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+        send request called methodTest:
+            method: {httpMethodArray}
+            path: {base.request.url.path}
+
+        if {methodTest.response.status_code} matches "200" then
+            report issue and continue:
+                severity: high
+                confidence: tentative
+                detail: {detailMsg}
+                remediation: {remediationMsg}
+        end if
+
+    end if
